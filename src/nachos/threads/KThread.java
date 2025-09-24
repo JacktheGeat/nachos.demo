@@ -425,25 +425,88 @@ public class KThread {
           * @param step subtract this from the current integer to get to the next integer
           */
         private void countDown(String label, int from, int to, int step) {
-
             for (int i = from; i >= to; i-=step){
                 myList.prepend(label+i);
-                yieldIfOughtTo();
             }
         }
-         
+
         public void run() {
+            // Countdown working output
             this.countDown(this.label, this.from, this.to, this.step);
+            System.err.println(myList);
             KThread.yield();
         }
 
-        public static DLList myList = new DLList();
+        private static DLList myList = new DLList();
         private String label; 
         private int from, to; 
         private int step;
     }
 
-    private static void yieldIfOughtTo() {
+
+    private static class DLListBadTest implements Runnable {
+        public DLListBadTest(int mode) {
+            this.mode = mode;
+            if (mode == 0) {
+                this.label = "A";
+                this.from = 12;
+                this.to = 2;
+                this.step = 2;
+            } else if (mode == 1) {
+                this.label = "B";
+                this.from = 11; 
+                this.to = 1;
+                this.step = 2;
+            }
+        }
+        
+        /**
+          * Prepends multiple nodes to a shared doubly-linked list. For each
+          * integer in the range from...to (inclusive), make a string
+          * concatenating label with the integer, and prepend a new node
+          * containing that data (that's data, not key). For example,
+          * countDown("A",8,6,1) means prepend three nodes with the data
+          * "A8", "A7", and "A6" respectively. countDown("X",10,2,3) will
+          * also prepend three nodes with "X10", "X7", and "X4".
+          *
+          * This method should conditionally yield after each node is inserted.
+          * Print the list at the very end.
+          *
+          * Preconditions: from>=to and step>0
+          *
+          * @param label string that node data should start with
+          * @param from integer to start at
+          * @param to integer to end at
+          * @param step subtract this from the current integer to get to the next integer
+          */
+        private void countDown(String label, int from, int to, int step) {
+            for (int i = from; i >= to; i-=step){
+                myList.prepend(label+i);
+            }
+        }
+
+        public void run() {
+            if (mode == 0 || mode == 1){
+                this.countDown(this.label, this.from, this.to, this.step);
+                System.err.println(myList);
+            }
+            else if (mode == 2){
+                myList.insert("A", 3);
+            } else {
+                myList.removeHead();
+                System.out.println(myList);
+            }
+            KThread.yield();
+        }
+
+        private static DLList myList = new DLList();
+        private String label; 
+        private int from, to; 
+        private int step;
+        private int mode;
+    }
+
+    public static void yieldIfOughtTo() {
         numTimesBefore ++;
         if (oughtToYield[(numTimesBefore-1) % oughtToYield.length]) {
             KThread.yield();
@@ -452,14 +515,80 @@ public class KThread {
     }
 
     /**
+      * Given this unique location, yield the
+      * current thread if it ought to. It knows
+      * to do this if yieldData[i][loc] is true, where
+      * i is the number of times that this function
+      * has already been called from this location.
+      *
+      * @param loc unique location. Every call to
+      * yieldIfShould that you
+      * place in your DLList code should
+      * have a different loc number.
+      */
+    public static void yieldIfShould(int loc) {
+        yieldCount[loc]++;
+        if (yieldData[loc][(yieldCount[loc]-1) % yieldData[loc].length]) {
+            KThread.yield();
+        }
+    }
+
+    /**
      * Tests whether this module is working.
      */
     public static void selfTest() {
-	Lib.debug(dbgThread, "Enter KThread.selfTest");
-	new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
-	new DLListTest("A", 12, 2, 2).run();
-    System.out.println(DLListTest.myList.toString());
+	    Lib.debug(dbgThread, "Enter KThread.selfTest");
+        // new KThread(new PingTest(1)).setName("forked thread").fork();
+        // new PingTest(0).run();
+        DLL_SelfTest();
+        DLL_BadTest();
+    }
 
+    /**
+     * Tests DLListTest
+     */
+    public static void DLL_SelfTest() {
+        Lib.debug(dbgThread, "Enter KThread.DLL_SelfTest");
+
+        //Working Interleavings:
+        System.out.println("\n\nResults in: B1, B3, B5 ..., A8, A10, A12");
+        DLListTest.myList = new DLList();
+        yieldData = new boolean[][]  {{false},{false}, {false}, {false}, {false}};
+        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
+        new DLListTest("A", 12, 2, 2).run();
+
+        System.out.println("\n\nResults in: B1, A2, B3, ..., A10, B11, A12");
+        DLListTest.myList = new DLList();
+        KThread.yieldData = new boolean[][] {{false},{false}, {true}, {false}, {false}};
+        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
+        new DLListTest("A", 12, 2, 2).run();
+
+        System.out.println("\n\nResults in: B1, B3, A2, A4, ..., B11, A10, A12");
+        DLListTest.myList = new DLList();
+        KThread.yieldData = new boolean[][] {{false},{false}, {false, true}, {false}, {false}};
+        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
+        new DLListTest("A", 12, 2, 2).run();
+    }
+
+    /**
+     * Tests DLListTest
+     */
+    public static void DLL_BadTest() {
+        Lib.debug(dbgThread, "Enter KThread.DLL_BadTest");
+        // Broken Interleavings:
+        yieldCount = new int[] {0, 0, 0, 0, 0};
+        DLListBadTest.myList = new DLList();
+        System.out.println("\n\nBroken Interleaving: Overwrites first node");
+        yieldData = new boolean[][] {{true},{false}, {true}, {false}, {false}};
+        new KThread(new DLListBadTest(1)).setName("forked thread").fork();
+        new DLListBadTest(0).run();
+
+        yieldCount = new int[] {0, 0, 0, 0, 0};
+        DLListBadTest.myList = new DLList();
+        System.out.println("\n\nBroken Interleaving: Results in Null Pointer");
+        yieldData = new boolean[][] {{false}, {false}, {true}, {true}, {false}};
+        new KThread(new DLListBadTest(2)).setName("forked thread").fork();
+        new DLListBadTest(3).run();
     }
 
     private static final char dbgThread = 't';
@@ -500,7 +629,14 @@ public class KThread {
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
 
-
     private static int numTimesBefore = 0;
-    private static boolean[] oughtToYield = {false};
+
+    // B1, B3, A2, A4 ...
+    private static boolean[] oughtToYield = {false, false, false, true};
+
+    private static int[] yieldCount = {0, 0, 0, 0, 0};
+
+
+
+    private static boolean[][] yieldData;
 }

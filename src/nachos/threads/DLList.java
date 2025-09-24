@@ -29,18 +29,23 @@ public class DLList
     public void prepend(Object item) {
         // If empty, start the list with the key = 0
         if (this.isEmpty()) {
+            KThread.yieldIfShould(0);
             DLLElement newNode = new DLLElement(item, 0);
             first = newNode;
+            KThread.yieldIfShould(4);
             last = newNode;
         }
         // not empty, prepend with key = first.key - 1
         else {
+            KThread.yieldIfShould(1);
+
             DLLElement newNode = new DLLElement(item, first.key-1);
             newNode.next = first;
             first.prev = newNode;
             first = newNode;
         }
         size +=1;
+        KThread.yieldIfShould(2);
     }
 
     /**
@@ -52,7 +57,6 @@ public class DLList
     public Object removeHead() {
         if (this.isEmpty()) return null;
         Object toReturn = first.data;
-        
         first = first.next;
         if (first == null) last = null;
         else first.prev = null;
@@ -86,9 +90,11 @@ public class DLList
         DLLElement newNode = new DLLElement(item, sortKey);
         // If list is empty, set first and last to newnode and finish
         if (this.isEmpty()) {
-            last = newNode;
-            first = newNode;
             size += 1;
+            last = newNode;
+            KThread.yieldIfShould(3);
+
+            first = newNode;
             return;
         }
 
