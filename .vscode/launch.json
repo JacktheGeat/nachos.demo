@@ -16,7 +16,7 @@
             "name": "Launch Java Program",
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
-            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj0/"
+            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj1/"
         },
         {
             "type": "java",

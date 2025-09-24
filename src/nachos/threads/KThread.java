@@ -390,11 +390,65 @@ public class KThread {
 	    for (int i=0; i<5; i++) {
 		System.out.println("*** thread " + which + " looped "
 				   + i + " times");
-		currentThread.yield();
+		KThread.yield();
 	    }
 	}
 
 	private int which;
+    }
+
+    private static class DLListTest implements Runnable {
+        public DLListTest(String label, int from, int to, int step) {
+            this.label = label;
+            this.from = from;
+            this.to = to;
+            this.step = step;
+        }
+        
+        /**
+          * Prepends multiple nodes to a shared doubly-linked list. For each
+          * integer in the range from...to (inclusive), make a string
+          * concatenating label with the integer, and prepend a new node
+          * containing that data (that's data, not key). For example,
+          * countDown("A",8,6,1) means prepend three nodes with the data
+          * "A8", "A7", and "A6" respectively. countDown("X",10,2,3) will
+          * also prepend three nodes with "X10", "X7", and "X4".
+          *
+          * This method should conditionally yield after each node is inserted.
+          * Print the list at the very end.
+          *
+          * Preconditions: from>=to and step>0
+          *
+          * @param label string that node data should start with
+          * @param from integer to start at
+          * @param to integer to end at
+          * @param step subtract this from the current integer to get to the next integer
+          */
+        private void countDown(String label, int from, int to, int step) {
+
+            for (int i = from; i >= to; i-=step){
+                myList.prepend(label+i);
+                yieldIfOughtTo();
+            }
+        }
+         
+        public void run() {
+            this.countDown(this.label, this.from, this.to, this.step);
+            KThread.yield();
+        }
+
+        public static DLList myList = new DLList();
+        private String label; 
+        private int from, to; 
+        private int step;
+    }
+
+    private static void yieldIfOughtTo() {
+        numTimesBefore ++;
+        if (oughtToYield[(numTimesBefore-1) % oughtToYield.length]) {
+            KThread.yield();
+        }
+        
     }
 
     /**
@@ -402,9 +456,10 @@ public class KThread {
      */
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
-	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new PingTest(0).run();
+	new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
+	new DLListTest("A", 12, 2, 2).run();
+    System.out.println(DLListTest.myList.toString());
+
     }
 
     private static final char dbgThread = 't';
@@ -444,4 +499,8 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+
+
+    private static int numTimesBefore = 0;
+    private static boolean[] oughtToYield = {false};
 }
