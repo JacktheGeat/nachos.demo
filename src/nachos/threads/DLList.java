@@ -43,7 +43,7 @@ public class DLList
             newNode.next = first;
             first.prev = newNode;
             first = newNode;
-        }
+        } 
         size +=1;
         KThread.yieldIfShould(2);
     }
