@@ -8,8 +8,6 @@ public class main {
         linkedlist.insert("A", 0);
         System.out.println(linkedlist.removeHead());
         System.out.println(linkedlist.reverseToString());
-
-
     }
     
 }

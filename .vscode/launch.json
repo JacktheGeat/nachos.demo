@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "App",
+            "projectName": "nachos.demo_912d290a"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "nachos.threads.Main",
+            "projectName": "nachos.demo_912d290a"
+        },
+        {
+            "type": "java",
             "name": "main",
             "request": "launch",
             "mainClass": "nachos.threads.main",
@@ -16,7 +30,7 @@
             "name": "Launch Java Program",
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
-            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj1/"
+            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj2/"
         },
         {
             "type": "java",

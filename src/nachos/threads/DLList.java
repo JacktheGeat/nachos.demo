@@ -10,6 +10,7 @@ public class DLList
     private DLLElement first;  // pointer to first node
     private DLLElement last;   // pointer to last node
     private int size;          // number of nodes in list
+    private Lock DLLock;
 
     /**
      * Creates an empty sorted doubly-linked list.
@@ -18,6 +19,7 @@ public class DLList
         this.first = null;
         this.last = null;
         this.size = 0;
+        this.DLLock = new Lock();
     }
 
     /**
@@ -28,6 +30,7 @@ public class DLList
      */
     public void prepend(Object item) {
         // If empty, start the list with the key = 0
+        DLLock.acquire();
         if (this.isEmpty()) {
             KThread.yieldIfShould(0);
             DLLElement newNode = new DLLElement(item, 0);
@@ -45,6 +48,7 @@ public class DLList
             first = newNode;
         } 
         size +=1;
+        DLLock.release();
         KThread.yieldIfShould(2);
     }
 
@@ -55,12 +59,14 @@ public class DLList
      * @return the data stored at the head of the list or null if list empty
      */
     public Object removeHead() {
+        DLLock.acquire();
         if (this.isEmpty()) return null;
         Object toReturn = first.data;
         first = first.next;
         if (first == null) last = null;
         else first.prev = null;
         size -= 1;
+        DLLock.release();
         return toReturn;
     }
 
@@ -89,12 +95,13 @@ public class DLList
     public void insert(Object item, Integer sortKey) {
         DLLElement newNode = new DLLElement(item, sortKey);
         // If list is empty, set first and last to newnode and finish
+        DLLock.acquire();
         if (this.isEmpty()) {
             size += 1;
             last = newNode;
             KThread.yieldIfShould(3);
-
             first = newNode;
+            DLLock.release();
             return;
         }
 
@@ -122,6 +129,7 @@ public class DLList
             newNode.next.prev = newNode;
         }
         size += 1;
+        DLLock.release();
     }
 
 
@@ -131,6 +139,7 @@ public class DLList
      * @return list elements in order
      */
     public String toString() {
+        DLLock.acquire();
         DLLElement runner = first;
         String toReturn = "(";
         while (!(runner == null)) {
@@ -138,6 +147,7 @@ public class DLList
             toReturn += runner.toString();
             runner = runner.next;
         }
+        DLLock.release();
         return toReturn + ")";
     }
 
@@ -147,6 +157,7 @@ public class DLList
      * @return list elements in backwards order
      */
     public String reverseToString(){
+        DLLock.acquire();
         DLLElement runner = last;
         String toReturn = "(";
         while (!(runner == null)) {
@@ -154,6 +165,7 @@ public class DLList
             toReturn += runner.toString();
             runner = runner.prev;
         }
+        DLLock.release();
         return toReturn + ")";
     }
 
