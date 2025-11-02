@@ -215,6 +215,7 @@ public class KThread {
      */
     public static void yield() {
 	Lib.debug(dbgThread, "Yielding thread: " + currentThread.toString());
+    //System.out.println("Yielding thread: " + currentThread.toString());
 	
 	Lib.assertTrue(currentThread.status == statusRunning);
 	
@@ -223,7 +224,7 @@ public class KThread {
 	currentThread.ready();
 
 	runNextThread();
-	
+
 	Machine.interrupt().restore(intStatus);
     }
 
@@ -306,6 +307,8 @@ public class KThread {
      * using <tt>run()</tt>.
      */
     private static void runNextThread() {
+    //System.out.print("Thread Queue: "); readyQueue.print(); System.out.println("");
+
 	KThread nextThread = readyQueue.nextThread();
 	if (nextThread == null)
 	    nextThread = idleThread;
@@ -433,8 +436,6 @@ public class KThread {
         public void run() {
             // Countdown working output
             this.countDown(this.label, this.from, this.to, this.step);
-            System.err.println(myList);
-            KThread.yield();
         }
 
         private static DLList myList = new DLList();
@@ -442,7 +443,6 @@ public class KThread {
         private int from, to; 
         private int step;
     }
-
 
     private static class DLListBadTest implements Runnable {
         public DLListBadTest(int mode) {
@@ -488,21 +488,38 @@ public class KThread {
         public void run() {
             if (mode == 0 || mode == 1){
                 this.countDown(this.label, this.from, this.to, this.step);
-                System.err.println(myList);
             }
             else if (mode == 2){
                 myList.insert("A", 3);
             } else {
                 myList.removeHead();
-                System.out.println(myList);
             }
-            KThread.yield();
         }
 
         private static DLList myList = new DLList();
         private String label; 
         private int from, to; 
         private int step;
+        private int mode;
+    }
+
+    private static class DLLockTest implements Runnable {
+        public DLLockTest(int mode) {
+            this.mode = mode;
+        }
+        
+
+        public void run() {
+            if (mode == 0){
+                myList.removeHead();
+            }
+            else if (mode == 1){
+                myList.prepend("A");
+            }
+            KThread.yield();
+        }
+
+        private static DLList myList = new DLList();
         private int mode;
     }
 
@@ -527,8 +544,12 @@ public class KThread {
       * have a different loc number.
       */
     public static void yieldIfShould(int loc) {
+        //System.out.println("yield if should");
         yieldCount[loc]++;
-        if (yieldData[loc][(yieldCount[loc]-1) % yieldData[loc].length]) {
+        boolean shouldYield = yieldData[loc][(yieldCount[loc]-1) % yieldData[loc].length];
+        // System.out.println(shouldYield);
+        if (shouldYield) {
+            //System.out.println(shouldYield);
             KThread.yield();
         }
     }
@@ -538,58 +559,231 @@ public class KThread {
      */
     public static void selfTest() {
 	    Lib.debug(dbgThread, "Enter KThread.selfTest");
+
         // new KThread(new PingTest(1)).setName("forked thread").fork();
         // new PingTest(0).run();
-        DLL_SelfTest();
-        DLL_BadTest();
+
+        // SelfTest_1();
+        SelfTest_2();
+        // SelfTest_3();
+
+        SelfTest_4();
+
+        SelfTestBad_1();
+        SelfTestBad_2();
+
     }
 
-    /**
-     * Tests DLListTest
-     */
-    public static void DLL_SelfTest() {
-        Lib.debug(dbgThread, "Enter KThread.DLL_SelfTest");
 
-        //Working Interleavings:
+    /**
+     * Results in: B1, B3, B5 ..., A8, A10, A12
+     */
+    private static void SelfTest_1(){
         System.out.println("\n\nResults in: B1, B3, B5 ..., A8, A10, A12");
         DLListTest.myList = new DLList();
         yieldData = new boolean[][]  {{false},{false}, {false}, {false}, {false}};
-        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
-        new DLListTest("A", 12, 2, 2).run();
+        KThread.yieldCount = new int[] {0, 0, 0, 0, 0};
+
+        KThread forkedThread = new KThread(new DLListTest("A", 12, 2, 2)).setName("forked thread");
+        forkedThread.fork();
+        KThread.yield();
+        for (int i = 11; i >= 1; i-=2){
+                DLListTest.myList.prepend("B"+i);
+                
+        }
+        forkedThread.join();
+        System.out.println(DLListTest.myList);
+
+
+    }
+    /**
+     * Results in: B1, A2, B3, ..., A10, B11, A12
+     */
+    private static void SelfTest_2(){
+        boolean interruptStatus = Machine.interrupt().disable();
 
         System.out.println("\n\nResults in: B1, A2, B3, ..., A10, B11, A12");
         DLListTest.myList = new DLList();
-        KThread.yieldData = new boolean[][] {{false},{false}, {true}, {false}, {false}};
-        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
-        new DLListTest("A", 12, 2, 2).run();
+        yieldData = new boolean[][] {{false},{false}, {true}, {false}, {false}};
+        KThread.yieldCount = new int[] {0, 0, 0, 0, 0};
 
-        System.out.println("\n\nResults in: B1, B3, A2, A4, ..., B11, A10, A12");
-        DLListTest.myList = new DLList();
-        KThread.yieldData = new boolean[][] {{false},{false}, {false, true}, {false}, {false}};
-        new KThread(new DLListTest("B", 11, 1, 2)).setName("forked thread").fork();
-        new DLListTest("A", 12, 2, 2).run();
+        KThread forkedThread = new KThread(new DLListTest("A", 12, 2, 2)).setName("forked thread");
+        forkedThread.fork();
+        KThread.yield();
+        for (int i = 11; i >= 1; i-=2){
+                DLListTest.myList.prepend("B"+i);
+                // yieldIfShould(2);
+        }
+        forkedThread.join();
+        System.out.println(DLListTest.myList);
+        Machine.interrupt().restore(interruptStatus);
+
     }
 
     /**
-     * Tests DLListTest
+     * Results in: B1, B3, A2, A4, ..., B11, A10, A12
      */
-    public static void DLL_BadTest() {
-        Lib.debug(dbgThread, "Enter KThread.DLL_BadTest");
-        // Broken Interleavings:
-        yieldCount = new int[] {0, 0, 0, 0, 0};
+    private static void SelfTest_3(){
+        System.out.println("\n\nResults in: B1, B3, A2, A4, ..., B11, A10, A12");
+        DLListTest.myList = new DLList();
+        KThread.yieldData = new boolean[][] {{false},{false}, {false, true}, {false}, {false}};
+        KThread.yieldCount = new int[] {0, 0, 0, 0, 0};
+
+        KThread forkedThread = new KThread(new DLListTest("A", 12, 2, 2)).setName("forked thread");
+        forkedThread.fork();
+        KThread.yield();
+        for (int i = 11; i >= 1; i-=2){
+                DLListTest.myList.prepend("B"+i);
+        }
+        forkedThread.join();
+        System.out.println(DLListTest.myList);
+    }
+    /**
+     * tests to see if removeAtHead waits for a node to be removed
+     * runs twice, one attempts to remove at head and then append, the other appends and then removes.
+     * both should output an empty list when done.
+     */
+    private static void SelfTest_4(){
+        Lib.debug(dbgThread, "Enter KThread.SelfTest_4");
+        DLListTest.myList = new DLList();
+        yieldData = new boolean[][] {{false},{false}, {true}, {false}, {false}};
+        System.out.println("\n\nCheck if removeAtHead sleeps until a node has been added.");
+        // removes then adds
+        DLLockTest.myList = new DLList();
+        KThread forkedThread = new KThread(new DLLockTest(1)).setName("forked thread");
+        forkedThread.fork();
+
+        DLLockTest.myList.removeHead();
+        KThread.yield(); // unnecessary, but kept just in case.
+        forkedThread.join();
+        System.out.println("Node removed first, then node added: \t" + DLLockTest.myList.toString());
+
+    }
+
+
+
+
+
+    /**
+     * Broken Interleaving: Overwrites first node
+     */
+    private static void SelfTestBad_1(){
+
         DLListBadTest.myList = new DLList();
         System.out.println("\n\nBroken Interleaving: Overwrites first node");
+        System.out.println("\nResults in: B1, A2, B3, ..., A10, B11, A12");
         yieldData = new boolean[][] {{true},{false}, {true}, {false}, {false}};
-        new KThread(new DLListBadTest(1)).setName("forked thread").fork();
-        new DLListBadTest(0).run();
+        KThread.yieldCount = new int[] {0, 0, 0, 0, 0};
 
+        KThread forkedThread = new KThread(new DLListBadTest(0)).setName("forked thread");
+        forkedThread.fork();
+        KThread.yield();
+        for (int i = 11; i >= 1; i-=2){
+                DLListBadTest.myList.prepend("B"+i);
+                // yieldIfShould(2);
+        }
+        forkedThread.join();
+        System.out.println(DLListBadTest.myList);
+    }
+    /**
+     * Broken Interleaving: Results in Null Pointer
+     */
+    private static void SelfTestBad_2(){
         yieldCount = new int[] {0, 0, 0, 0, 0};
         DLListBadTest.myList = new DLList();
         System.out.println("\n\nBroken Interleaving: Results in Null Pointer");
         yieldData = new boolean[][] {{false}, {false}, {true}, {true}, {false}};
-        new KThread(new DLListBadTest(2)).setName("forked thread").fork();
-        new DLListBadTest(3).run();
+        KThread.yieldCount = new int[] {0, 0, 0, 0, 0};
+
+        KThread forkedThread = new KThread(new DLListBadTest(2)).setName("forked thread");
+        forkedThread.fork();
+        KThread.yield();
+        DLListBadTest.myList.removeHead();
+        forkedThread.join();
+        System.out.println(DLListBadTest.myList);
     }
+
+    /**
+     * testsBounded Buffer
+     */
+    public static void BBSelfTest(){
+        Lib.debug(dbgThread, "Enter KThread.BBSelfTest");
+        System.out.println("\n\nBounded Buffer Tests:");
+        // BBTest_1();
+        // BBTest_2();
+    }
+
+    private static void BBTest_1(){
+        System.out.println("\nCheck overflow, buffer size = 2.");
+        BoundedBuffer buffer = new BoundedBuffer(2);
+
+        KThread forkedThread = new KThread(new BBTest(buffer, 0)).setName("forked thread");
+        forkedThread.fork();
+
+        System.out.println("writing: "+'a');
+        buffer.write('a');
+        System.out.println("writing: "+'b');
+        buffer.write('b');
+        System.out.println("writing: "+'c');
+        buffer.write('c');
+        System.out.println("writing: "+'d');
+        buffer.write('d');
+        System.out.println("writing: "+'e');
+        buffer.write('e');
+        forkedThread.join();
+        System.out.println("Final buffer state: ");buffer.print();
+    }
+
+    private static void BBTest_2(){
+        System.out.println("\nCheck underflow, buffer size = 2.");
+        BoundedBuffer buffer = new BoundedBuffer(2);
+
+        KThread forkedThread = new KThread(new BBTest(buffer, 1)).setName("forked thread");
+        forkedThread.fork();
+
+        System.out.println("Reading char");
+        System.out.println("read char: "+buffer.read());
+
+        System.out.println("Reading char");
+        System.out.println("read char: "+buffer.read());
+
+        System.out.println("Reading char");
+        System.out.println("read char: "+buffer.read());
+        forkedThread.join();
+        System.out.println("Final buffer state: ");buffer.print();
+
+    }
+
+
+
+    private static class BBTest implements Runnable{
+        BoundedBuffer buffer;
+        int mode;
+        char[] alphabet = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'};
+        public BBTest(BoundedBuffer buffer, int mode) {
+            this.buffer = buffer;
+            this.mode = mode;
+        }
+
+        public void run() {
+            if (mode == 0){
+                for (int i = 0; i < 3; i++) {
+                    System.out.println("Overflow - removing char:" + buffer.read());
+                    KThread.yield();
+                }
+            } else if (mode == 1){
+
+                for (int i = 0; i < 3; i++) {
+                    System.out.println("Underflow - writing char: "+alphabet[i]);
+                    buffer.write(alphabet[i]);
+                    KThread.yield();
+                }
+            }
+        }
+
+        
+    }
+
 
     private static final char dbgThread = 't';
 

@@ -12,10 +12,14 @@ public class SynchList {
      * Allocate a new synchronized queue.
      */
     public SynchList() {
-	list = new LinkedList<Object>();
-	lock = new Lock();
-	listEmpty = new Condition(lock);
+		list = new LinkedList<Object>();
+		lock = new Lock();
+		listEmpty = new Condition(lock);
     }
+
+	public boolean isEmpty(){
+		return list.isEmpty();
+	}
 
     /**
      * Add the specified object to the end of the queue. If another thread is

@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "nachos.threads.Main",
+            "projectName": "nachos.demo_912d290a"
+        },
+        {
+            "type": "java",
             "name": "main",
             "request": "launch",
             "mainClass": "nachos.threads.main",

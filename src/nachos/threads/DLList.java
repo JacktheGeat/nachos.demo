@@ -10,6 +10,8 @@ public class DLList
     private DLLElement first;  // pointer to first node
     private DLLElement last;   // pointer to last node
     private int size;          // number of nodes in list
+    private Lock DLLock = new Lock();
+    private Condition2 nodeToRemove= new Condition2(DLLock);
 
     /**
      * Creates an empty sorted doubly-linked list.
@@ -26,18 +28,28 @@ public class DLList
      * in the list (which should be located in the first node).
      * If no nodes exist yet, the key will be 0.
      */
-    public void prepend(Object item) {
+     public void prepend(Object item) {
+        // System.out.println(item + " has initialized");
+        DLLock.acquire();
+        // System.out.println(item + " has entered lock");
+        privatePrepend(item);
+        nodeToRemove.wake();
+        DLLock.release();
+        KThread.yieldIfShould(2);
+        // System.out.println(item +" is yielding if should");
+        // System.out.println("kept lock? : " +DLLock.isHeldByCurrentThread());
+    }
+
+    private void privatePrepend(Object item) {
         // If empty, start the list with the key = 0
         if (this.isEmpty()) {
             KThread.yieldIfShould(0);
             DLLElement newNode = new DLLElement(item, 0);
             first = newNode;
-            KThread.yieldIfShould(4);
             last = newNode;
         }
         // not empty, prepend with key = first.key - 1
         else {
-            KThread.yieldIfShould(1);
 
             DLLElement newNode = new DLLElement(item, first.key-1);
             newNode.next = first;
@@ -45,7 +57,8 @@ public class DLList
             first = newNode;
         } 
         size +=1;
-        KThread.yieldIfShould(2);
+
+        
     }
 
     /**
@@ -55,12 +68,16 @@ public class DLList
      * @return the data stored at the head of the list or null if list empty
      */
     public Object removeHead() {
-        if (this.isEmpty()) return null;
+        this.getDLLock();
+        if (this.isEmpty()) {
+            nodeToRemove.sleep();
+        };
         Object toReturn = first.data;
         first = first.next;
         if (first == null) last = null;
         else first.prev = null;
         size -= 1;
+        DLLock.release();
         return toReturn;
     }
 
@@ -88,6 +105,9 @@ public class DLList
      */
     public void insert(Object item, Integer sortKey) {
         DLLElement newNode = new DLLElement(item, sortKey);
+
+        this.getDLLock();
+
         // If list is empty, set first and last to newnode and finish
         if (this.isEmpty()) {
             size += 1;
@@ -95,6 +115,8 @@ public class DLList
             KThread.yieldIfShould(3);
 
             first = newNode;
+            nodeToRemove.wake();
+            DLLock.release();
             return;
         }
 
@@ -122,6 +144,8 @@ public class DLList
             newNode.next.prev = newNode;
         }
         size += 1;
+        nodeToRemove.wake();
+        DLLock.release();
     }
 
 
@@ -133,11 +157,15 @@ public class DLList
     public String toString() {
         DLLElement runner = first;
         String toReturn = "(";
+
+        this.getDLLock();
+
         while (!(runner == null)) {
             if (!toReturn.equals("(")) toReturn += " ";
             toReturn += runner.toString();
             runner = runner.next;
         }
+        DLLock.release();
         return toReturn + ")";
     }
 
@@ -149,11 +177,15 @@ public class DLList
     public String reverseToString(){
         DLLElement runner = last;
         String toReturn = "(";
+
+        DLLock.acquire();
+        
         while (!(runner == null)) {
             if (!toReturn.equals("(")) toReturn += " ";
             toReturn += runner.toString();
             runner = runner.prev;
         }
+        DLLock.release();
         return toReturn + ")";
     }
 
@@ -187,5 +219,9 @@ public class DLList
         public String toString(){
             return "[" + key + "," + data + "]";
         }
+    }
+
+    private void getDLLock() {
+        DLLock.acquire();
     }
 }

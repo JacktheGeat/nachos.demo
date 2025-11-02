@@ -31,10 +31,26 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
+        /*
+         */
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
+    // disable interrupts
+    boolean interruptStatus = Machine.interrupt().disable();
+    // release the lock
 	conditionLock.release();
+    
 
+    // add the current thread to a queue
+    KThread thread = KThread.currentThread();
+    waitQueue.add(thread);
+
+    // block the current thread
+    KThread.sleep();
+
+    // enable interrupts (when the thread gets woken up)
+    Machine.interrupt().restore(interruptStatus);
+
+    // reacquire the lock
 	conditionLock.acquire();
     }
 
@@ -44,6 +60,24 @@ public class Condition2 {
      */
     public void wake() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    // disable interrupts
+    boolean interruptStatus = Machine.interrupt().disable();
+    // release the lock
+	conditionLock.release();
+
+
+    // Only wakes a thread if there is one on the queue
+    if (!waitQueue.isEmpty()){
+        // remove the next thread from the queue
+        KThread nextThread = (KThread) waitQueue.removeFirst();
+        // wake the new thread
+        nextThread.ready();
+    }
+
+    // enable interrupts (when the thread gets woken up)
+    Machine.interrupt().restore(interruptStatus);
+    // reacquire the lock
+	conditionLock.acquire();
     }
 
     /**
@@ -52,7 +86,27 @@ public class Condition2 {
      */
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+
+    // disable interrupts
+    boolean interruptStatus = Machine.interrupt().disable();
+    // release the lock
+	conditionLock.release();
+   
+
+    // Only wakes a thread if there is one on the queue
+    while (!waitQueue.isEmpty()){
+        // remove the next thread from the queue
+        KThread nextThread = (KThread) waitQueue.removeFirst();
+        // wake the new thread
+        nextThread.ready();
+    }
+
+    // enable interrupts (when the thread gets woken up)
+    Machine.interrupt().restore(interruptStatus);
+    // reacquire the lock
+	conditionLock.acquire();
     }
 
     private Lock conditionLock;
+    private SynchList waitQueue = new SynchList();
 }
