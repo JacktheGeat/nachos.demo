@@ -23,7 +23,7 @@
             "name": "Launch Java Program",
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
-            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj1/"
+            "cwd": "/home/jacklynch/Documents/OS/nachos/nachos.test/src/nachos/proj3/"
         },
         {
             "type": "java",
