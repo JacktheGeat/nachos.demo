@@ -85,6 +85,7 @@ public final class Lib {
      * @param	message		the error message.
      */     
     public static void assertTrue(boolean expression, String message) {
+    System.out.println(message);
 	if (!expression)
 	    throw new AssertionFailureError(message);
     }
