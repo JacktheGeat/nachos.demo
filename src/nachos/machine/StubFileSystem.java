@@ -27,9 +27,9 @@ public class StubFileSystem implements FileSystem {
     }
     
     public OpenFile open(String name, boolean truncate) {
-	if (!checkName(name))
+	if (!checkName(name)){
 	    return null;
-	
+	}
 	delay();
 	    
 	try {
@@ -85,8 +85,9 @@ public class StubFileSystem implements FileSystem {
 		public void run() { getRandomAccessFile(f, truncate); }
 	    });
 
-	    if (file == null)
+	    if (file == null){
 		throw new IOException();
+		}
 
 	    open = true;
 	    openCount++;
@@ -171,12 +172,17 @@ public class StubFileSystem implements FileSystem {
 
     private static boolean checkName(String name) {
 	char[] chars = name.toCharArray();
-
 	for (int i=0; i<chars.length; i++) {
-	    if (chars[i] < 0 || chars[i] >= allowedFileNameCharacters.length)
-		return false;
-	    if (!allowedFileNameCharacters[(int) chars[i]])
-		return false;
+	    if (chars[i] < 0 || chars[i] >= allowedFileNameCharacters.length) {
+			System.out.println("chars[i] < 0 || chars[i] >= allowedFileNameCharacters.length");
+			return false;
+		}
+		
+	    if (!allowedFileNameCharacters[(int) chars[i]]){
+			System.out.println("not allowed char: " + chars[i]);
+			return false;
+		}
+		
 	}
 	return true;
     }

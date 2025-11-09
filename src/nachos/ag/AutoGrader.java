@@ -149,7 +149,7 @@ public class AutoGrader {
     }
     
     void run() {
-	//kernel.selfTest();
+	kernel.selfTest();
 	kernel.run();
 	kernel.terminate();
     }
@@ -209,7 +209,7 @@ public class AutoGrader {
      */
     public void timerInterrupt(Privilege privilege, long time) {
 	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+		   "timerInterrupt security violation");
     }
 
     /**
@@ -221,7 +221,7 @@ public class AutoGrader {
      */
     public boolean exceptionHandler(Privilege privilege) {
 	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+		   "exceptionHandler security violation");
 	return true;
     }
 
@@ -233,7 +233,7 @@ public class AutoGrader {
      */
     public void runProcessor(Privilege privilege) {
 	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+		   "runProcessor security violation");
     }
 
     /**
@@ -258,7 +258,7 @@ public class AutoGrader {
      */
     public boolean canSendPacket(Privilege privilege) {
 	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+		   "canSendPacket security violation");
 	return true;
     }
     
@@ -271,7 +271,7 @@ public class AutoGrader {
      */
     public boolean canReceivePacket(Privilege privilege) {
 	Lib.assertTrue(privilege == this.privilege,
-		   "security violation");
+		   "canReceivePacket security violation");
 	return true;
     }
     

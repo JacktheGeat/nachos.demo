@@ -73,8 +73,11 @@ public final class Lib {
      * @param	expression	the expression to assert.
      */     
     public static void assertTrue(boolean expression) {
-	if (!expression)
+	if (!expression){
+        System.out.println(expression);
+
 	    throw new AssertionFailureError();
+    }
     }
 
     /**
@@ -85,7 +88,6 @@ public final class Lib {
      * @param	message		the error message.
      */     
     public static void assertTrue(boolean expression, String message) {
-    System.out.println(message);
 	if (!expression)
 	    throw new AssertionFailureError(message);
     }

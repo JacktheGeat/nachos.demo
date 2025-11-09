@@ -395,7 +395,8 @@ public class UserProcess {
         return handleRead(a0, a1, a2);
     case syscallWrite:
         return handleWrite(a0, a1, a2);
-
+    // case syscallExit:
+    //     return handleHalt();
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -408,13 +409,12 @@ public class UserProcess {
      * Handle a user exception. Called by
      * <tt>UserKernel.exceptionHandler()</tt>. The
      * <i>cause</i> argument identifies which exception occurred; see the
-     * <tt>Processor.exceptionZZZ</tt> constants.
+     * <tt>Processor.exception</tt> constants.
      *
      * @param	cause	the user exception that occurred.
      */
     public void handleException(int cause) {
 	Processor processor = Machine.processor();
-
 	switch (cause) {
 	case Processor.exceptionSyscall:
 	    int result = handleSyscall(processor.readRegister(Processor.regV0),
