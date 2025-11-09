@@ -123,7 +123,7 @@ public class UserKernel extends ThreadedKernel {
      */
     public static void releaseFrame(int frameNumber){}
 
-    public DLList Userkernel = new DLList();
+    // public DLList Userkernel = new DLList();
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
