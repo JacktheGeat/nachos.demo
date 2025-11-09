@@ -8,14 +8,14 @@
             "type": "java",
             "name": "Main",
             "request": "launch",
-            "mainClass": "nachos.threads.Main",
+            "mainClass": "nachos.machine.Machine",
             "projectName": "nachos.demo_912d290a"
         },
         {
             "type": "java",
             "name": "main",
             "request": "launch",
-            "mainClass": "nachos.threads.main",
+            "mainClass": "nachos.machine.Machine",
             "projectName": "nachos.demo_912d290a"
         },
         {
@@ -24,7 +24,7 @@
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
             "cwd": "/home/jacklynch/Documents/OS/nachos.demo/src/nachos/proj3/",
-            "args": "-x writeTest.coff"
+            "args": "-x readTest.coff -d ac"
         },
         {
             "type": "java",

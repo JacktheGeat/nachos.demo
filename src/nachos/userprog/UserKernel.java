@@ -107,6 +107,24 @@ public class UserKernel extends ThreadedKernel {
 	super.terminate();
     }
 
+    /**
+     * return a list of <requested> free frame numbers that can be used
+     * for a process
+     *
+     * @param requested number of free frames requested
+     * @return array of frame numbers that the process can use or null
+     * if request cannot be fulfilled
+     */
+    public static int[] allocateFrames(int requested){
+        return new int[2];
+    }
+    /**
+     * put frameNumber back in the free frames list
+     */
+    public static void releaseFrame(int frameNumber){}
+
+    public DLList Userkernel = new DLList();
+
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
 
