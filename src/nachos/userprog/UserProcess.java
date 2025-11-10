@@ -3,8 +3,10 @@ package nachos.userprog;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
+import nachos.vm.VMKernel;
 
 import java.io.EOFException;
+import java.nio.file.attribute.UserPrincipalLookupService;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -288,18 +290,21 @@ public class UserProcess {
 	    return false;
 	}
 
+    int pageCounter = 0;
 	// load sections
 	for (int s=0; s<coff.getNumSections(); s++) {
 	    CoffSection section = coff.getSection(s);
 	    
 	    Lib.debug(dbgProcess, "\tinitializing " + section.getName()
 		      + " section (" + section.getLength() + " pages)");
-
-	    for (int i=0; i<section.getLength(); i++) {
-		int vpn = section.getFirstVPN()+i;
-
-		// for now, just assume virtual addresses=physical addresses
-		section.loadPage(i, vpn);
+        
+        int[] frameNums = UserKernel.allocateFrames(section.getLength());
+	    for (int i=0; i<frameNums.length; i++) {
+            int vpn = section.getFirstVPN()+i;
+            System.out.println("vpn:" +vpn);
+            section.loadPage(i, vpn);
+            pageTable[pageCounter] = new TranslationEntry(frameNums[i], vpn, true, false, true, false);
+            pageCounter ++;
 	    }
 	}
 	
@@ -310,6 +315,16 @@ public class UserProcess {
      * Release any resources allocated by <tt>loadSections()</tt>.
      */
     protected void unloadSections() {
+        System.out.println("unloading sections");
+        for (int s=0; s<coff.getNumSections(); s++) {
+            CoffSection section = coff.getSection(s);
+            for (int i = 0; i < pageTable.length; i++){
+                TranslationEntry page = pageTable[i];
+                page.valid = false;
+                UserKernel.releaseFrame(page.ppn - section.getFirstVPN());
+            }
+        }
+        coff.close();
     }    
 
     /**
@@ -395,8 +410,8 @@ public class UserProcess {
         return handleRead(a0, a1, a2);
     case syscallWrite:
         return handleWrite(a0, a1, a2);
-    // case syscallExit:
-    //     return handleHalt();
+    case syscallExit:
+        exit(a0);
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -468,6 +483,12 @@ public class UserProcess {
         }
         length = writeVirtualMemory(buffer, buf, 0, length);
         return length;
+    }
+
+    private void exit(int status) {
+        Lib.debug(dbgProcess, "Exiting with status: " + status);
+        unloadSections();
+        Kernel.kernel.terminate();
     }
 
     /** The program being run by this process. */

@@ -177,6 +177,7 @@ public final class Machine {
 	if (Config.getBoolean("Machine.processor")) {
 	    if (numPhysPages == -1)
 		numPhysPages = Config.getInteger("Processor.numPhysPages");
+		System.out.println("numPhysPages = " + numPhysPages);
 	    processor = new Processor(privilege, numPhysPages);
 	}				      
 

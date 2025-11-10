@@ -23,6 +23,13 @@ public class UserKernel extends ThreadedKernel {
 	super.initialize(args);
 
 	console = new SynchConsole(Machine.console());
+
+    freeFrames = new DLList();
+    final int numPhysPages = Machine.processor().getNumPhysPages();
+    // for (int i = numPhysPages - 1; i >= 0; i--){
+    for (int i = 0; i <numPhysPages; i++){
+        freeFrames.prepend(i);
+    }
 	
 	Machine.processor().setExceptionHandler(new Runnable() {
 		public void run() { exceptionHandler(); }
@@ -116,14 +123,23 @@ public class UserKernel extends ThreadedKernel {
      * if request cannot be fulfilled
      */
     public static int[] allocateFrames(int requested){
-        return new int[2];
+        System.out.println("allocating " + requested + " frames");
+        if (requested > freeFrames.size()) return null;
+        int[] toReturn = new int[requested];
+        for (int i=0; i<requested; i++) {
+            toReturn[i] = (int)freeFrames.removeHead();
+            System.out.println("frame: " + toReturn[i]);
+        }
+        return toReturn;
     }
     /**
      * put frameNumber back in the free frames list
      */
-    public static void releaseFrame(int frameNumber){}
+    public static void releaseFrame(int frameNumber){
+        freeFrames.prepend(frameNumber);
+    }
 
-    // public DLList Userkernel = new DLList();
+    public static DLList freeFrames;
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
