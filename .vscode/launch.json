@@ -23,8 +23,8 @@
             "name": "Launch Java Program",
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
-            "cwd": "/home/jacklynch/Documents/OS/nachos.demo/src/nachos/proj3/",
-            "args": "-x print1K.coff -d ac"
+            "cwd": "/home/lynchj3/Documents/nachos.demo/src/nachos/proj3",
+            "args": "-x madman.coff",
         },
         {
             "type": "java",
