@@ -24,7 +24,7 @@
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
             "cwd": "/home/jacklynch/Documents/OS/nachos.demo/src/nachos/proj3/",
-            "args": "-x readTest.coff -d ac"
+            "args": "-x print1K.coff -d ac"
         },
         {
             "type": "java",

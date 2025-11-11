@@ -27,7 +27,7 @@ public class UserKernel extends ThreadedKernel {
     freeFrames = new DLList();
     final int numPhysPages = Machine.processor().getNumPhysPages();
     // for (int i = numPhysPages - 1; i >= 0; i--){
-    for (int i = 0; i <numPhysPages; i++){
+    for (int i = 0; i < numPhysPages; i++){
         freeFrames.prepend(i);
     }
 	
@@ -123,12 +123,10 @@ public class UserKernel extends ThreadedKernel {
      * if request cannot be fulfilled
      */
     public static int[] allocateFrames(int requested){
-        System.out.println("allocating " + requested + " frames");
         if (requested > freeFrames.size()) return null;
         int[] toReturn = new int[requested];
         for (int i=0; i<requested; i++) {
             toReturn[i] = (int)freeFrames.removeHead();
-            System.out.println("frame: " + toReturn[i]);
         }
         return toReturn;
     }
