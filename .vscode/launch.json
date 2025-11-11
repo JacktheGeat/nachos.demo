@@ -24,7 +24,7 @@
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
             "cwd": "/home/lynchj3/Documents/nachos.demo/src/nachos/proj3",
-            "args": "-x madman.coff",
+            "args": "-x sum.coff",
         },
         {
             "type": "java",
