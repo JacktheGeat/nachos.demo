@@ -1,12 +1,8 @@
 package nachos.userprog;
 
+import java.io.EOFException;
 import nachos.machine.*;
 import nachos.threads.*;
-import nachos.userprog.*;
-import nachos.vm.VMKernel;
-
-import java.io.EOFException;
-import java.nio.file.attribute.UserPrincipalLookupService;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -28,7 +24,7 @@ public class UserProcess {
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	    pageTable[i] = new TranslationEntry(i,i, false,false,false,false);
     }
     
     /**
@@ -309,6 +305,7 @@ public class UserProcess {
 	}
 
     int pageCounter = 0;
+    int lastVPN = 0;
 	// load sections
 	for (int s=0; s<coff.getNumSections(); s++) {
 	    CoffSection section = coff.getSection(s);
@@ -319,14 +316,24 @@ public class UserProcess {
         int[] frameNums = UserKernel.allocateFrames(section.getLength());
 	    for (int i=0; i<frameNums.length; i++) {
             int vpn = section.getFirstVPN()+i;
+            lastVPN = vpn;
         // for (int i=frameNums.length; i > 0; i--) {
         //     int vpn = section.getFirstVPN() + frameNums.length-i;
             section.loadPage(i, frameNums[i]);
             pageTable[pageCounter] = new TranslationEntry(vpn, frameNums[i], true, false, true, false);
-            Lib.debug(dbgProcess, "Frame: " + frameNums[i] + "\tMapped to page: " + vpn);
+            Lib.debug(dbgProcess, "\t\tPage: " + vpn + " \tMapped to frame: " + frameNums[i]);
             pageCounter ++;
 	    }
 	}
+    //Allocate for the stack now
+    int[] stackFrames = UserKernel.allocateFrames(stackPages);
+    for (int i = 0; i < stackPages; i++){
+        lastVPN ++;
+
+        pageTable[pageCounter] = new TranslationEntry(lastVPN, stackFrames[i], true, false, false, false);
+        Lib.debug(dbgProcess, "\t\tPage: " + lastVPN + " \tMapped to frame: " + stackFrames[i]);
+        pageCounter++;
+    }
 	return true;
     }
 
@@ -334,15 +341,18 @@ public class UserProcess {
      * Release any resources allocated by <tt>loadSections()</tt>.
      */
     protected void unloadSections() {
-        for (int s=0; s<coff.getNumSections(); s++) {
-            CoffSection section = coff.getSection(s);
-            for (int i = 0; i < pageTable.length; i++){
-                TranslationEntry page = pageTable[i];
-                page.valid = false;
-                UserKernel.releaseFrame(page.ppn - section.getFirstVPN());
-            }
+    int counter = 0;
+    for (int i = 0; i < pageTable.length; i++){
+        TranslationEntry page = pageTable[i];
+        if (page.valid) {
+            page.valid = false;
+            UserKernel.releaseFrame(page.ppn );
+            counter++;
         }
-        coff.close();
+    }
+    Lib.debug(dbgProcess, "\tUnloaded " + counter + " pages");
+
+    coff.close();
     }    
 
     /**

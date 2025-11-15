@@ -2,7 +2,6 @@ package nachos.userprog;
 
 import nachos.machine.*;
 import nachos.threads.*;
-import nachos.userprog.*;
 
 /**
  * A kernel that can support multiple user processes.
@@ -27,7 +26,9 @@ public class UserKernel extends ThreadedKernel {
     freeFrames = new DLList();
     final int numPhysPages = Machine.processor().getNumPhysPages();
     // for (int i = numPhysPages - 1; i >= 0; i--){
-    for (int i = 0; i < numPhysPages; i++){
+    // for (int i = 0; i < numPhysPages; i++){
+    for (int i = numPhysPages - 1; i >= 0; i-=2){
+        freeFrames.prepend(i-1);
         freeFrames.prepend(i);
     }
 	

@@ -2,8 +2,6 @@
 
 #define BUFFERSIZE = 16
   // i dont know C, so im sorry this can't be more interesting, 
-  // but I tried and failed at allowing you to input two numbers for the sum, 
-  // so two basic numbers it is
     int main() {
         char aChar;
         char bChar;
