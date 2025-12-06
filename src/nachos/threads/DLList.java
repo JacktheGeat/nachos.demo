@@ -35,7 +35,6 @@ public class DLList
         privatePrepend(item);
         nodeToRemove.wake();
         DLLock.release();
-        KThread.yieldIfShould(2);
         // System.out.println(item +" is yielding if should");
         // System.out.println("kept lock? : " +DLLock.isHeldByCurrentThread());
     }
@@ -43,7 +42,6 @@ public class DLList
     private void privatePrepend(Object item) {
         // If empty, start the list with the key = 0
         if (this.isEmpty()) {
-            KThread.yieldIfShould(0);
             DLLElement newNode = new DLLElement(item, 0);
             first = newNode;
             last = newNode;
@@ -112,7 +110,6 @@ public class DLList
         if (this.isEmpty()) {
             size += 1;
             last = newNode;
-            KThread.yieldIfShould(3);
 
             first = newNode;
             nodeToRemove.wake();
